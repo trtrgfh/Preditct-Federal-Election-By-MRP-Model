@@ -1,0 +1,315 @@
+---
+title: "Use of MRP Model Predicted Liberal Party would win Canadian Election"
+author: "YeHao Zheng"
+date: "December 21, 2020"
+output:
+  pdf_document: default
+  bookdown::pdf_document2: default
+nocite: '@*'
+---
+
+#GitHub repository
+https://github.com/trtrgfh/sta304-final_project
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+library(tidyverse)
+library(knitr)
+```
+
+# Abstract
+
+The 2020 US election has been a trending topic with its new record of number of people voted, and as its neighbour, people start to wonder how the 2019 Canadian Federal Election would have been different if more people had voted. In this paper, we'll be using a MRP model to predict which party would win the election with age, sex, education, marital status, and province as predictors. The result will be a close match between the Liberal Party, and the Conservative Party, but the Liberal Party would win eventually.
+Keywords: MRP model, forecasting, Canada Election 2019, Liberal Party, Conservative Party.
+
+# Introduction
+
+For countries like Canada and the US, election has always been an important event that every citizens should be a part of.
+Especially With the number of voters reached a new high in the US, meaning more people are taking the elections more seriously. It got me wonder if more people voted in the 2019 Canadian Federal Election, how would the result be different. Would the Conservative Party overcome the obstacles and take the win or would the Liberal Party further secure its place.
+Since the break out of Covid-19, different countries have reacted differently. Some citizens are not satisfy with the acts their government has done, and many of them are realizing the importance of being part of the election. If people can vote again in the 2019 Canadian Federal Election, the result might actully be different. In order to find the probability that whether the Liberal Party would still win the election, I'll be looking at the age, sex, education, marital status of the voters, and which province the voters are currently living in.
+For the layout of the rest of the report, I’ll use multiple predictors to investigate the wining chance of the Liberal Party based on the cleaned CES and GSS datase. The method I use will be the multilevel regression with poststratification model which is a popular way to adjust a sample population to better analyse a target population. In the Results section, the result of whether the Liberal Party would win the election will be provided, and some graph will be shown to support the outcome. Finally, the advantage of the MRP model, and some concerns about the model will be discuss at the end.
+
+# Data
+
+```{r, include=FALSE, warning=FALSE}
+#install.packages("devtools")
+#devtools::install_github("hodgettsp/cesR")
+suppressWarnings(suppressMessages(library("cesR")))
+library(tidyverse)
+```
+
+```{r, include=FALSE}
+# import the survey data
+get_ces("ces2019_web")
+# import the clean census Data
+census_data <- read_csv("census_data.csv")
+census_data <- na.omit(census_data)
+# data manipulation
+survey_data <- ces2019_web %>% mutate(sex = case_when(cps19_gender == 1 ~ "Male",
+                                                       cps19_gender == 2 ~ "Female",
+                                                       cps19_gender == 3 ~ "Other"))
+survey_data <- survey_data %>% rename(age = cps19_age)    
+
+survey_data <- survey_data %>% mutate(vote_liberal = ifelse(cps19_votechoice == 1,1,0)) 
+survey_data <- survey_data[!is.na(survey_data$vote_liberal), ]
+survey_data <- survey_data %>% mutate(vote_conservative = ifelse(cps19_votechoice == 2,1,0)) 
+
+survey_data <- survey_data %>% filter(cps19_province != 19 &
+                            cps19_province != 21 &
+                            cps19_province != 26)
+survey_data <- survey_data %>% mutate(province = case_when(cps19_province == 14 ~ "Alberta",
+                                                           cps19_province == 15 ~ "British Columbia",
+                                                           cps19_province == 16 ~ "Manitoba",
+                                                           cps19_province == 17 ~ "New Brunswick",
+                                                           cps19_province == 18 ~ "Newfoundland and Labrador",
+                                                           cps19_province == 20 ~ "Nova Scotia",
+                                                           cps19_province == 22 ~ "Ontario",
+                                                           cps19_province == 23 ~ "Prince Edward Island",
+                                                           cps19_province == 24 ~ "Quebec",
+                                                           cps19_province == 25 ~ "Saskatchewan"))
+
+survey_data <- survey_data %>% mutate(educ = case_when(cps19_education == 10 ~  "Master or doctorate degree",
+                                           cps19_education == 8 ~ "High school",
+                                           cps19_education == 5 ~ "High school",
+                                           cps19_education == 4 ~ "Less than high school",
+                                           cps19_education == 9 ~ "Bachelor's degree",
+                                           cps19_education == 6 ~ "High school",
+                                           cps19_education == 7 ~ "College degree",
+                                           cps19_education == 11 ~ "Master or doctorate degree",
+                                           cps19_education == 12 ~ "No schooling",
+                                           cps19_education == 3 ~ "Less than high school",
+                                           cps19_education == 2 ~ "Less than high school",
+                                           cps19_education == 1 ~ "No schooling"))
+
+survey_data <- survey_data %>% filter(cps19_marital != 7)
+survey_data <- survey_data %>% mutate(marital_status = case_when(cps19_marital == 2 ~ "Living common-law",
+                                                     cps19_marital == 6 ~ "Single, never married",
+                                                     cps19_marital == 4 ~ "Separated",
+                                                     cps19_marital == 1 ~ "Married",
+                                                     cps19_marital == 3 ~ "Divorced",
+                                                     cps19_marital == 5 ~ "Widowed"))
+
+survey_data <- survey_data %>% mutate(party = case_when(cps19_votechoice == 1 ~ "Liberal",
+                                                        cps19_votechoice == 2 ~ "Conservative",
+                                                        cps19_votechoice == 3 ~ "Other",
+                                                        cps19_votechoice == 4 ~ "Other",
+                                                        cps19_votechoice == 5 ~ "Other",
+                                                        cps19_votechoice == 6 ~ "Other",
+                                                        cps19_votechoice == 7 ~ "Other",
+                                                        cps19_votechoice == 9 ~ "Other"))
+
+survey_data<-survey_data %>% 
+  mutate(agegroup = case_when(age <= 35 ~ '35 or less',
+                                             age >35  & age <= 55 ~ '35 to 55',
+                                             age >55  & age <= 70 ~ '55 to 70',
+                                             age >70 ~ 'above 70'
+                                             )) 
+
+survey_data2<-survey_data %>% 
+  filter(cps19_votechoice != 3 &
+         cps19_votechoice != 4 &
+         cps19_votechoice != 5 &
+         cps19_votechoice != 6 &
+         cps19_votechoice != 7 &
+         cps19_votechoice != 9)
+survey_data2<-survey_data %>%
+  mutate(liberal_vs_cons = case_when(cps19_votechoice == 1 ~ "Liberal", 
+                                     cps19_votechoice == 2 ~ "Conservative Party"))
+survey_data2 <- survey_data2[!is.na(survey_data2$liberal_vs_cons), ]
+
+```
+
+
+```{r}
+library(table1)
+labels <- list(
+    variables=list(sex="Sex",
+                   age="Age (years)",
+                   province="Province",
+                   educ="Education",
+                   marital_status="Marital_Status"),
+    groups=list("", "", "Liberal"))
+levels(survey_data$vote_liberal) <- c("Alive", "Liberal", "Non-Conservative")
+strata <- c(list(Total=survey_data), split(survey_data, survey_data$vote_liberal))
+my.render.cont <- function(x) {
+    with(stats.apply.rounding(stats.default(x), digits=2), c("",
+        "Mean (SD)"=sprintf("%s (&plusmn; %s)", MEAN, SD)))
+}
+my.render.cat <- function(x) {
+    c("", sapply(stats.default(x), function(y) with(y,
+        sprintf("%d (%0.0f %%)", FREQ, PCT))))
+}
+
+table1(strata, labels, groupspan=c(1, 1, 2),
+       render.continuous=my.render.cont, render.categorical=my.render.cat)
+
+
+```
+
+The survey data use in this paper is from the 2019 online survey of Canadian Election study. The data consists of 37822 cases and 634 variables(Canadian Election Study, 2019), and is mean to gather the attitude and opinions of Canadian for the 2019 Canadian Election. The census data is from the Canadian general social surveys (GSS) which is provided by CHASS.
+For the survey data, I would like to predict whether the Liberal Party of Conservative Party would win the election, and I've chosen the variable sex, age, province, educ, and marital_status as predictors. For the response variable, cps19_votechoice is used, and by mutating a new column where 1 is the votes for Liberal and 0 is the votes for other parties, the number of votes for Liberal can be counted. After removing all the NA in this dataset, we left with 31099 cases, and from the above baseline characteristics table, we see that 8823 of them would vote for Liberal.
+In this paper, the population is all Canadians, and the frame is people who intend to vote for Liberal, and the sample is Canadian who filled out the online survey from the Canadian Election Study. Using the sample, we'll predicted the vote intention for all Canadians.
+
+# Model
+
+```{r, echo=FALSE}
+# Creating the Model
+model <- glm(vote_liberal ~ agegroup + sex + province + educ + marital_status, 
+            data=survey_data, family="binomial")
+summary(model)
+
+model2 <- glm(vote_conservative ~ agegroup + sex + province + educ + marital_status, 
+            data=survey_data, family="binomial")
+# Check BIC
+BIC(model)
+# Diagnostic plot
+par(mfrow = c(2, 2))
+plot(model)
+```
+
+```{r, echo=FALSE}
+backward_BIC <- step(model, direction = "backward", k=log(length(survey_data))) #backward elimination with BIC. 
+summary(backward_BIC)
+```
+
+For this paper, the model is performed in the statistical language R (R Core Team, 2020).
+For the predictors used in this model, age was selected insetead of age group because older population tend to be more invovled in the election. Most young people are not really interested in politics. I have also chosen sex as a categorical predictor. Typically, there are more male involved in politics, but in this survey data, there are actually more female. It would be interesting to see how sex would change the result. Then I've chosen province as a categorical predictor. 
+Just like the US, each province in Canada also have their own favorite party. For example, people in Alberta are more likely to vote for the Conservative Party. Therefore, province is an important factor to predict the result. Moreover, the categorical predictor educ which represents the education leven of the respondents also play a big part in the election. People with different eduction would have different opinions on the speeches and commitments made by the parties. Lastly I've chosen the categorical predictor marital_status. People with different marital_status might also have different thought on the party's acts. A party might be more supportive on having more people getting babies or it can give out more funds to single mothers. For the response variable, I've created a binary variable where 1 is the votes for the Liberal Party, and 0 is the votes for other parties. I've also created another binary variable where 1 is the votes forthe Conservative Party, and 0 is the votes for other parties. Since these two party are the top two competitors in the election, the party with a higher vote percentage would be the predict winner of the election.
+The model used is the generalized linear model, and the model would be apply to the post-stratified data. 
+Let $x_1$, $X_2$, $X_3$, $X_4$, $X_5$ represent agegroup, sex, province, educ, and marital_status respectively. Let $Y_i$ represent the $i^{th} $response variable observation- the binary variable of Liberal Party or Other parties. Then the model would look like:
+$$ Y_i = \beta_0 + \beta_1X_1 + \beta_2X_2 + \beta_3X_3 + \beta_4X_4 + \beta_5X_5 + \epsilon_i$$
+The beta coefficients is the slope of the predictors and the epsilon is the error term for the $i^{th}$ observation.
+This model clearly find the significant level of the predictors, but the variables used in this model are all categorical which means the regression line would probably not follow a linear trend. This might make the result not as accury.
+By looking at the summary table, we see that most of the p-values are smaller than the significant level of 0.05 which means most of the predictors are significant in terms of predicting the election result. However, the AIC and BIC values are so big that it indicates this model is not well fitted.
+Using the backward elimination with BIC, the new fitted model is $$ Y_i = \beta_0 + \beta_1X_1 + \beta_2X_2 + \beta_3X_3 + \epsilon_i$$
+where $x_1$, $X_2$, $X_3$ represent agegroup, educ, and province respectively.
+
+# Result 
+
+```{r gender, fig.cap="Popular vote perdiction by gender", echo =FALSE}
+ggplot(survey_data2, aes(x=sex, fill=party))+
+  geom_bar(alpha = 0.8)+
+  facet_wrap(~party, ncol=1)+
+  coord_flip()+
+  theme_minimal()+
+  ylab("Vote Count")+
+  xlab("Gender")
+```
+
+```{r education, fig.cap="Popular vote perdiction by education", echo =FALSE}
+ggplot(survey_data2, aes(x=educ, fill=party))+
+  geom_bar(alpha = 0.8)+
+  facet_wrap(~party, ncol=1)+
+  coord_flip()+
+  theme_minimal()+
+  ylab("Vote Count")+
+  xlab("education")+
+  theme(axis.text.y = element_text(size=6))
+```
+
+```{r marital_status, fig.cap="Popular vote perdiction by marital_status", echo =FALSE}
+ggplot(survey_data2, aes(x=marital_status, fill=party))+
+  geom_bar(alpha = 0.8)+
+  facet_wrap(~party, ncol=1)+
+  coord_flip()+
+  theme_minimal()+
+  ylab("Vote Count")+
+  xlab("marital_status")+
+  theme(axis.text.y = element_text(size=6))
+```
+
+```{r province, fig.cap="Popular vote perdiction by province", echo =FALSE}
+ggplot(survey_data2, aes(x=province, fill=party))+
+  geom_bar(alpha = 0.8)+
+  facet_wrap(~party, ncol=1)+
+  coord_flip()+
+  theme_minimal()+
+  ylab("Vote Count")+
+  xlab("province")+
+  theme(axis.text.y = element_text(size=6))
+```
+
+```{r age, fig.cap="Popular vote perdiction by age", echo =FALSE}
+
+ggplot(survey_data2, aes(x=agegroup, fill=party))+
+  geom_bar(alpha = 0.8)+
+  facet_wrap(~party, ncol=1)+
+  coord_flip()+
+  theme_minimal()+
+  ylab("Vote Count")+
+  xlab("age")+
+  theme(axis.text.y = element_text(size=6))
+```
+
+
+```{r, echo=FALSE}
+# Here I will perform the post-stratification calculation
+census_data$estimate <-
+  model %>%
+  predict(newdata = census_data, type="response")
+census_data %>%
+  mutate(predict_liberal_prop = estimate*n) %>%
+  summarise(predict_liberal = sum(predict_liberal_prop)/sum(n))
+
+census_data$estimate <-
+  model2 %>%
+  predict(newdata = census_data, type="response")
+census_data %>%
+  mutate(predict_conservative_prop = estimate*n) %>%
+  summarise(predict_conservative = sum(predict_conservative_prop)/sum(n))
+```
+
+From the above graphs, we see that the Liberal Party tend to be more popular among female, and the number of female and male respondent who are willing to vote for the Conservative Party is very close. For the education level of the respondents, more high educated people intend to vote for the Liberal Party. People with high school diploma and college degree are more likely to vote for the Conservative Party. For the marital status, more single and never married respondents are willing to vote for Liberal Party, and more married respondents are willing to vote for the Conservative. For the provinces the respondents are currently living in, the people in Alberta are significantly more favored in the Conservative Party, and the Liberal Party gets a lot more votes from people in Ontario and Quebec. Finally, there's not much difference in the age distribution for both party. The Liberal Party gets a bit more votes from people at age 35 or less.
+Then, modelled by a generalized linear model with predictors age, sex, educ, province, marital status, and based off the post-stratification analysis of the proportion of voters in favour of the Liberal and Conservative Party. we estimate the final result that the Liberal Party would get a proportion of about 28.37 percents of the votes, and the Conservative Party would get a proportion of about 27.39 percent of the votes. Since these two party have the most votes among all other parties, the Liberal Party would win the election in this close match with the Conservative Party.
+
+# Discussion
+
+```{r parties_vote, fig.cap="Popular vote perdiction by parties", echo =FALSE}
+vote_data <- ces2019_web %>% mutate(Party = case_when(cps19_votechoice == 1 ~ "Liberal",
+                                                       cps19_votechoice == 2 ~ "Conservative Party",
+                                                       cps19_votechoice == 3 ~ "ndp",
+                                                       cps19_votechoice == 4 ~ "Bloc Québécois",
+                                                       cps19_votechoice == 5 ~ "Green Party",
+                                                       cps19_votechoice == 6 ~ "People's Party",
+                                                       cps19_votechoice == 7 ~ "Another party (please specify)",
+                                                       cps19_votechoice == 9 ~ "Don't know/ Prefer not to answer"))
+vote_data <- vote_data[!is.na(vote_data$Party), ]
+
+ggplot(vote_data, aes(x=factor(1), fill=Party))+ geom_bar(width = 1)+ coord_polar("y")
+```
+
+
+In this paper, we use the dataset from the 2019 online survey of Canadian Election study and the Canadian general social surveys (GSS), and we predicted the proportion of vote in favour of the Liberal and Conservative Party using a generalized linear model with post stratification.
+Then we get the result that the proportion of votes in favour of the Liberal Party is around 28.37 percent and the proportion of votes in favour of the Conservative Party is around 27.39 percent. Based on the result, we know that among 100 respondents, about 28 of them would vote for the Liberal Party and 27 of them would vote for the Conservative Party.
+In figure 6, we see that the Liberal Party and the Conservative Party have coverd more areas than any other parties, and their votes are actually too close that we couldn't tell who wins the election. Also, looking at figure 4, we further confirms that the geographical advantage of the parties that different province may favor different party. Futhermore, figure 3 has shown that education is also a big factor that effect the result such that more high educated people favour in the Liberal Party. Different parties have different opinions on managing the country, and one mistake made by the winning party might cause enormous damage to the country. Especially this year, many countries have made terrible calls on the reactions to the Covid-19 and their citizens have suffered greatly. 
+
+# Weakness
+
+One weakness of the analysis is that we predict the proportion of votes by a online survey, so the result might not be as accury. Also, getting more votes in the analysis does not mean the party will defintely win the election. There are many cases where a party wins the popular vote from survey but still lost the election. Another weakness is that I have only chose 5 predictors and there are a lot more factors that may effect the result of an election. The variable cps19_votechoice also have many NAs, and after removing them, we only have around 30000 cases left.
+For future improvements of the analysis, we can use a more updated census data. The census data used in this paper is produced in the year 2016. Also, we can add more predictors to the model and first finding out which one of them are significant to the result, and deleting the ones that are not as significant.
+
+# References
+
+Alexander, R and Caetano, S. (2020). *01-data_cleaning-post-strat1*. University of Toronto
+
+R Core Team (2020). *R: A Language and Environment for Statistical Computing*. R Foundation for Statistical Computing, Vienna, Austria.
+
+Stephenson, Laura B; Harell, Allison; Rubenson, Daniel; Loewen, Peter John, 2020, '2019 Canadian Election Study - Online Survey', https://doi.org/10.7910/DVN/DUS88V, Harvard Dataverse, V1
+LINK: https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/DUS88V
+
+Rich, B. (2020, November 25). Retrieved December 23, 2020, from https://cran.r-project.org/web/packages/table1/vignettes/table1-examples.html
+
+Stastic  Canada (2020, April). General Social Survey, Cycle 31 : Families
+Public Use Microdata File Documentation and User’s Guide, fro https://sda-artsci-utoronto-ca.myaccess.library.utoronto.ca/sdaweb/dli2/gss/gss31/gss31/more_doc/GSS31_User_Guide.pdf
+
+Data from, https://sda-artsci-utoronto-ca.myaccess.library.utoronto.ca/cgi-bin/sda/hsda?harcsda4+gss31
+
+Multiple Linear Regression Analysis. (n.d.). Retrieved October 19, 2020, from http://reliawiki.org/index.php/Multiple_Linear_Regression_Analysis
+
+```{r}
+citation("tidyverse")
+citation("table1")
+citation("cesR")
+citation("ggplot2")
+```
+
