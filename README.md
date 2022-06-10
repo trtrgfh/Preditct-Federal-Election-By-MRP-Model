@@ -1,1 +1,1 @@
-# sta304-final_project
+# predict-federal-election-by-mrp-model
