@@ -3,31 +3,10 @@
 # Predict Federal Election by MRP Model
 
 # Project Overview
-
 This project explores how increased voter turnout might have impacted the 2019 Canadian Federal Election. Using a Multilevel Regression with Poststratification (MRP) model, we predict the election outcome based on factors such as age, sex, education, marital status, and province. The goal is to determine whether higher voter participation would have altered the result, specifically if it could have led to a Conservative Party victory over the Liberal Party. The findings suggest a close race, with the Liberal Party likely maintaining a slight edge. This analysis underscores the significance of demographic factors in electoral outcomes.
 
-# Installation and Setup
-
-In this section, provide detailed instructions on how to set up the project on a local machine. This includes any necessary dependencies, software requirements, and installation steps. Make sure to include clear and concise instructions so that others can easily replicate your setup.
-
-I like to structure it as below - 
-## Codes and Resources Used
-In this section I give user the necessary information about the software requirements.
-- **Editor Used:**  Informing the user of the editor used to produce the project.
-- **Python Version:** Informing the user of the version of python used for this project. If you are using some other language such as R, you can mention that as well.
-
-## Python Packages Used
-In this section, I include all the necessary dependencies needed to reproduce the project, so that the reader can install them before replicating the project. I categorize the long list of packages used as - 
-- **General Purpose:** General purpose packages like `urllib, os, request`, and many more.
-- **Data Manipulation:** Packages used for handling and importing dataset such as `pandas, numpy` and others.
-- **Data Visualization:** Include packages which were used to plot graphs in the analysis or for understanding the ML modelling such as `seaborn, matplotlib` and others.
-- **Machine Learning:** This includes packages that were used to generate the ML model such as `scikit, tensorflow`, etc.
-
-The level of granularity you want to provide for the above list is entirely up to you. You can also add a few more levels, such as those for statistical analysis or data preparation, or you can simply incorporate them into the above list as is.
-
 # Data
-
-The very crucial part of any data science project is dataset. Therefore list all the data sources used in the project, including links to the original data, descriptions of the data, and any pre-processing steps that were taken.
+The census_data.csv used can be found in the repository.
 
 I structure this as follows - 
 
