@@ -1,10 +1,10 @@
-![](https://github.com/pragyy/datascience-readme-template/blob/main/Headerheader.jpg)
+<img src="https://media.licdn.com/dms/image/C4E12AQHcwl6rswFXkw/article-cover_image-shrink_600_2000/0/1600461296436?e=2147483647&v=beta&t=rheNneNwqloxmEfmSc2W-3fxS5AOokt0BbRYN0oHr4w" width="500" />
 
 # Predict Federal Election by MRP Model
 
 # Project Overview
 
-In this section you should provide a brief overview of the project, what it is about, and what it aims to achieve. This will help readers quickly understand what the project is all about.
+This project explores how increased voter turnout might have impacted the 2019 Canadian Federal Election. Using a Multilevel Regression with Poststratification (MRP) model, we predict the election outcome based on factors such as age, sex, education, marital status, and province. The goal is to determine whether higher voter participation would have altered the result, specifically if it could have led to a Conservative Party victory over the Liberal Party. The findings suggest a close race, with the Liberal Party likely maintaining a slight edge. This analysis underscores the significance of demographic factors in electoral outcomes.
 
 # Installation and Setup
 
