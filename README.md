@@ -8,6 +8,10 @@ This project explores how increased voter turnout might have impacted the 2019 C
 # Data
 The census_data.csv is used.
 
+## Source Data
+The survey data used is from the 2019 online survey of Canadian Election study, and can be loaded with get_ces("ces2019_web").
+The census data is from the Canadian general social surveys (GSS) which is provided by CHASS, and it's cleaned using gss_cleaning.R which outputs the census_data.csv used in the markdown.
+
 # Results and evaluation
 Provide an overview of the results of your project, including any relevant metrics and graphs. Include explanations of any evaluation methodologies and how they were used to assess the quality of the model. You can also make it appealing by including any pictures of your analysis or visualizations.
 
