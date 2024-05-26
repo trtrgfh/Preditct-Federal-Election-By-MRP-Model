@@ -1,4 +1,4 @@
-<img src="https://media.licdn.com/dms/image/C4E12AQHcwl6rswFXkw/article-cover_image-shrink_600_2000/0/1600461296436?e=2147483647&v=beta&t=rheNneNwqloxmEfmSc2W-3fxS5AOokt0BbRYN0oHr4w" width="500" />
+<img src="https://github.com/trtrgfh/Preditct-Federal-Election-MRP-Model/assets/73056232/d011ea30-3644-401b-ad99-442b7bebbc9d" width="500" />
 
 # Predict Federal Election by MRP Model
 
